@@ -1074,4 +1074,24 @@ EOF
   expect_log "$stdcpp$lm$object_file"
 }
 
+function test_sibling_repository_layout_include_external_repo_output() {
+  mkdir test
+  cat > test/BUILD <<'EOF'
+cc_library(
+  name = "foo",
+  srcs = ["foo.cc"],
+  deps = ["@bazel_tools//tools/jdk:jni"],
+)
+EOF
+  cat > test/foo.cc <<'EOF'
+#include <jni.h>
+#include <stdio.h>
+
+extern "C" JNIEXPORT void JNICALL Java_foo_App_f(JNIEnv *env, jclass clazz, jint x) {
+  printf("hello %d\n", x);
+}
+EOF
+  bazel build --experimental_sibling_repository_layout //test:foo > $TEST_log || fail "expected build success"
+}
+
 run_suite "cc_integration_test"
